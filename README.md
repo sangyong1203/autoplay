@@ -19,6 +19,15 @@ Edit `schedule.json`.
 - `mode: "interval"` plays every `intervalSeconds`.
 - `mode: "daily"` plays once per day at `timeOfDay` in `HH:mm` format.
 - `videoUrl` points to the video URL to play.
+- `preloadMinutes` downloads the video before the scheduled playback time.
+
+Downloaded videos are cached under Electron's `userData` directory:
+
+```text
+%APPDATA%\Motrex Auto Player Test\videos
+```
+
+The app records download metadata in `video-cache.json` in the same `userData` directory.
 
 ## Tray Menu
 

@@ -1,17 +1,25 @@
 const { app, BrowserWindow, Menu, Tray, nativeImage, shell } = require('electron');
+const crypto = require('crypto');
 const fs = require('fs');
+const fsp = require('fs/promises');
+const { Readable } = require('stream');
+const { pipeline } = require('stream/promises');
 const path = require('path');
+const { pathToFileURL } = require('url');
 
 const APP_NAME = 'Motrex Auto Player Test';
 const SCHEDULE_PATH = path.join(__dirname, 'schedule.json');
 const TRAY_ICON_PATH = path.join(__dirname, 'tray-icon.png');
 const DEFAULT_VIDEO_URL = 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4';
+const DEFAULT_PRELOAD_MINUTES = 10;
 
 app.setName(APP_NAME);
 
 let tray = null;
 let playerWindow = null;
 let scheduleTimer = null;
+let preloadTimer = null;
+let downloadInFlight = null;
 
 function getAutoLaunchSettings(enabled = true) {
   if (app.isPackaged) {
@@ -39,8 +47,106 @@ function readScheduleConfig() {
       enabled: true,
       videoUrl: DEFAULT_VIDEO_URL,
       mode: 'interval',
-      intervalSeconds: 30
+      intervalSeconds: 30,
+      preloadMinutes: DEFAULT_PRELOAD_MINUTES
     };
+  }
+}
+
+function getVideoCacheDir() {
+  return path.join(app.getPath('userData'), 'videos');
+}
+
+function getVideoCacheIndexPath() {
+  return path.join(app.getPath('userData'), 'video-cache.json');
+}
+
+function getVideoFileName(videoUrl) {
+  const urlPath = new URL(videoUrl).pathname;
+  const extension = path.extname(urlPath) || '.mp4';
+  const hash = crypto.createHash('sha256').update(videoUrl).digest('hex').slice(0, 16);
+  return `${hash}${extension}`;
+}
+
+async function readVideoCache() {
+  try {
+    const rawCache = await fsp.readFile(getVideoCacheIndexPath(), 'utf8');
+    return JSON.parse(rawCache);
+  } catch (error) {
+    return {};
+  }
+}
+
+async function writeVideoCache(cache) {
+  await fsp.mkdir(app.getPath('userData'), { recursive: true });
+  await fsp.writeFile(getVideoCacheIndexPath(), JSON.stringify(cache, null, 2), 'utf8');
+}
+
+function notifyPlayerStatus(status) {
+  if (playerWindow && !playerWindow.isDestroyed()) {
+    playerWindow.webContents.send('video:status', status);
+  }
+}
+
+async function fileExists(filePath) {
+  try {
+    const stats = await fsp.stat(filePath);
+    return stats.isFile() && stats.size > 0;
+  } catch (error) {
+    return false;
+  }
+}
+
+async function downloadVideo(videoUrl, targetPath) {
+  const response = await fetch(videoUrl);
+
+  if (!response.ok || !response.body) {
+    throw new Error(`Download failed with HTTP ${response.status}`);
+  }
+
+  const tempPath = `${targetPath}.download`;
+  await fsp.rm(tempPath, { force: true });
+  await pipeline(Readable.fromWeb(response.body), fs.createWriteStream(tempPath));
+  await fsp.rename(tempPath, targetPath);
+}
+
+async function ensureVideoDownloaded(videoUrl, reason = 'preload') {
+  if (downloadInFlight) {
+    return downloadInFlight;
+  }
+
+  downloadInFlight = (async () => {
+    const cacheDir = getVideoCacheDir();
+    const fileName = getVideoFileName(videoUrl);
+    const filePath = path.join(cacheDir, fileName);
+    const cache = await readVideoCache();
+
+    await fsp.mkdir(cacheDir, { recursive: true });
+
+    if (await fileExists(filePath)) {
+      return filePath;
+    }
+
+    notifyPlayerStatus(`Downloading video for ${reason}...`);
+    await downloadVideo(videoUrl, filePath);
+
+    const stats = await fsp.stat(filePath);
+    cache[videoUrl] = {
+      fileName,
+      filePath,
+      downloadedAt: new Date().toISOString(),
+      size: stats.size
+    };
+    await writeVideoCache(cache);
+    notifyPlayerStatus('Download completed');
+
+    return filePath;
+  })();
+
+  try {
+    return await downloadInFlight;
+  } finally {
+    downloadInFlight = null;
   }
 }
 
@@ -94,11 +200,23 @@ function createPlayerWindow() {
   return playerWindow;
 }
 
-function playVideo(reason = 'manual') {
+async function playVideo(reason = 'manual') {
   const scheduleConfig = readScheduleConfig();
   const targetWindow = createPlayerWindow();
-  const videoUrl = scheduleConfig.videoUrl || DEFAULT_VIDEO_URL;
-  const payload = { videoUrl, reason };
+  const sourceVideoUrl = scheduleConfig.videoUrl || DEFAULT_VIDEO_URL;
+
+  let videoUrl = sourceVideoUrl;
+  let isLocal = false;
+
+  try {
+    const localVideoPath = await ensureVideoDownloaded(sourceVideoUrl, reason);
+    videoUrl = pathToFileURL(localVideoPath).toString();
+    isLocal = true;
+  } catch (error) {
+    notifyPlayerStatus(`Download failed. Playing source URL. ${error.message}`);
+  }
+
+  const payload = { videoUrl, sourceVideoUrl, reason, isLocal };
 
   if (targetWindow.webContents.isLoading()) {
     targetWindow.webContents.once('did-finish-load', () => {
@@ -179,14 +297,7 @@ function millisecondsUntilTimeOfDay(timeOfDay) {
   return nextRun.getTime() - now.getTime();
 }
 
-function scheduleNextRun() {
-  clearTimeout(scheduleTimer);
-
-  const scheduleConfig = readScheduleConfig();
-  if (!scheduleConfig.enabled) {
-    return;
-  }
-
+function getNextScheduleDelayMs(scheduleConfig) {
   let delayMs = 30 * 1000;
 
   if (scheduleConfig.mode === 'daily') {
@@ -199,6 +310,43 @@ function scheduleNextRun() {
       ? intervalSeconds * 1000
       : delayMs;
   }
+
+  return delayMs;
+}
+
+function schedulePreload() {
+  clearTimeout(preloadTimer);
+
+  const scheduleConfig = readScheduleConfig();
+  if (!scheduleConfig.enabled) {
+    return;
+  }
+
+  const videoUrl = scheduleConfig.videoUrl || DEFAULT_VIDEO_URL;
+  const preloadMinutes = Number(scheduleConfig.preloadMinutes);
+  const preloadMs = Number.isFinite(preloadMinutes) && preloadMinutes > 0
+    ? preloadMinutes * 60 * 1000
+    : DEFAULT_PRELOAD_MINUTES * 60 * 1000;
+  const nextDelayMs = getNextScheduleDelayMs(scheduleConfig);
+  const preloadDelayMs = Math.max(0, nextDelayMs - preloadMs);
+
+  preloadTimer = setTimeout(() => {
+    ensureVideoDownloaded(videoUrl, 'schedule preload').catch((error) => {
+      notifyPlayerStatus(`Preload failed. ${error.message}`);
+    });
+  }, preloadDelayMs);
+}
+
+function scheduleNextRun() {
+  clearTimeout(scheduleTimer);
+  schedulePreload();
+
+  const scheduleConfig = readScheduleConfig();
+  if (!scheduleConfig.enabled) {
+    return;
+  }
+
+  const delayMs = getNextScheduleDelayMs(scheduleConfig);
 
   scheduleTimer = setTimeout(() => {
     playVideo('schedule');
@@ -220,4 +368,5 @@ app.on('window-all-closed', () => {});
 app.on('before-quit', () => {
   app.isQuiting = true;
   clearTimeout(scheduleTimer);
+  clearTimeout(preloadTimer);
 });

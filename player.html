@@ -91,13 +91,21 @@
 
       window.motrexPlayer.onPlayVideo((payload) => {
         videoPlayer.src = payload.videoUrl;
-        videoUrl.textContent = payload.videoUrl;
+        videoUrl.textContent = payload.isLocal
+          ? `Local: ${payload.videoUrl}`
+          : `Source: ${payload.sourceVideoUrl || payload.videoUrl}`;
         playReason.textContent = `Started by ${payload.reason}`;
-        playerStatus.textContent = `Playing at ${new Date().toLocaleTimeString()}`;
+        playerStatus.textContent = payload.isLocal
+          ? `Playing local video at ${new Date().toLocaleTimeString()}`
+          : `Playing source URL at ${new Date().toLocaleTimeString()}`;
 
         videoPlayer.play().catch(() => {
           playerStatus.textContent = 'Playback is ready. Press play if autoplay is blocked.';
         });
+      });
+
+      window.motrexPlayer.onVideoStatus((status) => {
+        playerStatus.textContent = status;
       });
     </script>
   </body>

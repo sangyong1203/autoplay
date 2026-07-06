@@ -1,7 +1,8 @@
 {
   "enabled": true,
-  "videoUrl": "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
+  "videoUrl": "http://192.168.0.80:9001/api/v1/download-shared-object/aHR0cDovLzEyNy4wLjAuMTo5MDAwL3ZpZGVvL3NhbXBsZS5tcDQ_WC1BbXotQWxnb3JpdGhtPUFXUzQtSE1BQy1TSEEyNTYmWC1BbXotQ3JlZGVudGlhbD1QSzhVM0NFOFMyUzFNOElNVTZOOCUyRjIwMjYwNzA2JTJGdXMtZWFzdC0xJTJGczMlMkZhd3M0X3JlcXVlc3QmWC1BbXotRGF0ZT0yMDI2MDcwNlQwNzMwNDVaJlgtQW16LUV4cGlyZXM9NDMyMDAmWC1BbXotU2VjdXJpdHktVG9rZW49ZXlKaGJHY2lPaUpJVXpVeE1pSXNJblI1Y0NJNklrcFhWQ0o5LmV5SmhZMk5sYzNOTFpYa2lPaUpRU3poVk0wTkZPRk15VXpGTk9FbE5WVFpPT0NJc0ltVjRjQ0k2TVRjNE16TTJOakl4Tml3aWNHRnlaVzUwSWpvaVlXUnRhVzRpZlEuUVZZWUh4NUZma09xUjFDTnp3NTJvNHRCRnBSQkhYeEtfOVgtX2tWQ2ZTb3daazN4cXMzOElRV2x1V25pbjZsMDRxUi1SUTlZN2tCaWd1OFAwbjdLbVEmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JnZlcnNpb25JZD1udWxsJlgtQW16LVNpZ25hdHVyZT1jNjc3Y2UwNmQ5OGI1Y2MzNjc1NzE2ZDc0MmY1YTZkMGI1YzkwNzM2MzFhMWE0YWY5NmRlODE5OWE2ZGM2OTYz",
   "mode": "interval",
   "intervalSeconds": 30,
+  "preloadMinutes": 1,
   "timeOfDay": "09:00"
 }
