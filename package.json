@@ -1,0 +1,13 @@
+{
+  "name": "motrex-auto-player-test",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Cross-platform tray auto-launch video player test app.",
+  "main": "main.js",
+  "scripts": {
+    "start": "node start-electron.js"
+  },
+  "devDependencies": {
+    "electron": "^31.0.0"
+  }
+}

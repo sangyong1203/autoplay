@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Motrex Auto Player Test</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: #111827;
+        color: #f9fafb;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+
+      .player-shell {
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+        min-height: 100vh;
+      }
+
+      .player-header,
+      .player-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 12px 16px;
+        background: #1f2937;
+      }
+
+      .player-title {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 700;
+      }
+
+      .player-status {
+        color: #d1d5db;
+        font-size: 13px;
+      }
+
+      .video-stage {
+        display: grid;
+        place-items: center;
+        min-height: 0;
+        padding: 16px;
+      }
+
+      .video-player {
+        width: min(100%, 1200px);
+        max-height: calc(100vh - 124px);
+        background: #000;
+      }
+
+      .video-url {
+        overflow: hidden;
+        color: #9ca3af;
+        font-size: 12px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="player-shell">
+      <header class="player-header">
+        <h1 class="player-title">Motrex Auto Player Test</h1>
+        <span class="player-status" id="playerStatus">Waiting for schedule</span>
+      </header>
+
+      <section class="video-stage">
+        <video class="video-player" id="videoPlayer" controls autoplay muted playsinline></video>
+      </section>
+
+      <footer class="player-footer">
+        <span class="player-status" id="playReason">No playback yet</span>
+        <span class="video-url" id="videoUrl">No video loaded</span>
+      </footer>
+    </main>
+
+    <script>
+      const videoPlayer = document.getElementById('videoPlayer');
+      const playerStatus = document.getElementById('playerStatus');
+      const playReason = document.getElementById('playReason');
+      const videoUrl = document.getElementById('videoUrl');
+
+      window.motrexPlayer.onPlayVideo((payload) => {
+        videoPlayer.src = payload.videoUrl;
+        videoUrl.textContent = payload.videoUrl;
+        playReason.textContent = `Started by ${payload.reason}`;
+        playerStatus.textContent = `Playing at ${new Date().toLocaleTimeString()}`;
+
+        videoPlayer.play().catch(() => {
+          playerStatus.textContent = 'Playback is ready. Press play if autoplay is blocked.';
+        });
+      });
+    </script>
+  </body>
+</html>

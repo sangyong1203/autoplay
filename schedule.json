@@ -1,0 +1,7 @@
+{
+  "enabled": true,
+  "videoUrl": "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
+  "mode": "interval",
+  "intervalSeconds": 30,
+  "timeOfDay": "09:00"
+}
