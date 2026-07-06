@@ -5,9 +5,38 @@
   "description": "Cross-platform tray auto-launch video player test app.",
   "main": "main.js",
   "scripts": {
-    "start": "node start-electron.js"
+    "start": "node start-electron.js",
+    "dist": "electron-builder --win nsis"
   },
   "devDependencies": {
-    "electron": "^31.0.0"
+    "electron": "^31.0.0",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "com.motrex.autoplayer",
+    "productName": "Motrex Auto Player Test",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "player.html",
+      "schedule.json",
+      "tray-icon.png",
+      "assets/icon.ico",
+      "package.json"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
   }
 }

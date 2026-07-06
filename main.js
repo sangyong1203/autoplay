@@ -75,6 +75,7 @@ function createPlayerWindow() {
     height: 540,
     show: false,
     title: APP_NAME,
+    icon: path.join(__dirname, 'assets', 'icon.ico'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
