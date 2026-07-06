@@ -6,7 +6,8 @@
   "main": "main.js",
   "scripts": {
     "start": "node start-electron.js",
-    "dist": "electron-builder --win nsis"
+    "dist": "electron-builder --win nsis",
+    "dist:mac": "electron-builder --mac dmg zip"
   },
   "devDependencies": {
     "electron": "^31.0.0",
@@ -25,11 +26,20 @@
       "schedule.json",
       "tray-icon.png",
       "assets/icon.ico",
+      "assets/icon.icns",
       "package.json"
     ],
     "win": {
       "target": "nsis",
       "icon": "assets/icon.ico"
+    },
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "icon": "assets/icon.icns",
+      "category": "public.app-category.video"
     },
     "nsis": {
       "oneClick": false,

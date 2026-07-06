@@ -168,7 +168,13 @@ function ensureAutoLaunchRegistered() {
 
 function createTrayIcon() {
   const trayIcon = nativeImage.createFromPath(TRAY_ICON_PATH);
-  return trayIcon.resize({ width: 16, height: 16 });
+  const resizedTrayIcon = trayIcon.resize({ width: 16, height: 16 });
+
+  if (process.platform === 'darwin') {
+    resizedTrayIcon.setTemplateImage(true);
+  }
+
+  return resizedTrayIcon;
 }
 
 function createPlayerWindow() {

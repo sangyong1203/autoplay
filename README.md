@@ -12,6 +12,22 @@ npm start
 The app automatically registers itself for OS login startup when it runs.
 After restarting the PC and logging in, it starts in the background with only the tray icon visible.
 
+## Build
+
+Windows installer:
+
+```bash
+npm run dist
+```
+
+macOS DMG/ZIP:
+
+```bash
+npm run dist:mac
+```
+
+Build the macOS package on macOS. Code signing and notarization are required for distribution outside local testing.
+
 ## Schedule
 
 Edit `schedule.json`.
