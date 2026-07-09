@@ -6,12 +6,17 @@
   "main": "main.js",
   "scripts": {
     "start": "node start-electron.js",
+    "server": "node server/index.js",
     "dist": "electron-builder --win nsis",
     "dist:mac": "electron-builder --mac dmg zip"
   },
+  "dependencies": {
+    "mqtt": "^5.15.2"
+  },
   "devDependencies": {
     "electron": "^31.0.0",
-    "electron-builder": "^26.15.3"
+    "electron-builder": "^26.15.3",
+    "express": "^5.2.1"
   },
   "build": {
     "appId": "com.motrex.autoplayer",
@@ -24,6 +29,7 @@
       "preload.js",
       "player.html",
       "schedule.json",
+      "config.json",
       "tray-icon.png",
       "assets/icon.ico",
       "assets/icon.icns",

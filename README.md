@@ -6,6 +6,7 @@ Electron test app for tray execution, OS login auto launch, and scheduled video 
 
 ```bash
 npm install
+npm run server
 npm start
 ```
 
@@ -30,7 +31,13 @@ Build the macOS package on macOS. Code signing and notarization are required for
 
 ## Schedule
 
-Edit `schedule.json`.
+The app loads schedules from the API server on startup:
+
+```text
+GET http://localhost:3000/api/schedules
+```
+
+Edit `server/schedules.json` for server-provided schedules. `schedule.json` remains as a local fallback if the API is unavailable.
 
 - `mode: "interval"` plays every `intervalSeconds`.
 - `mode: "daily"` plays once per day at `timeOfDay` in `HH:mm` format.
@@ -44,6 +51,30 @@ Downloaded videos are cached under Electron's `userData` directory:
 ```
 
 The app records download metadata in `video-cache.json` in the same `userData` directory.
+
+## MQTT Schedule Updates
+
+Default MQTT settings are in `config.json`:
+
+```json
+{
+  "apiBaseUrl": "http://localhost:3000",
+  "mqttUrl": "mqtt://localhost:1883",
+  "scheduleUpdatedTopic": "motrex/schedule/updated"
+}
+```
+
+When the app receives a `schedule_updated` message on the configured topic, it shows a desktop notification and reloads schedules from the API.
+
+Test publish through the local server:
+
+```bash
+curl -X POST http://localhost:3000/api/schedules/notify-update ^
+  -H "Content-Type: application/json" ^
+  -d "{\"source\":\"manual-test\"}"
+```
+
+This requires an MQTT broker such as Mosquitto running on `mqtt://localhost:1883`.
 
 ## Tray Menu
 

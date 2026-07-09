@@ -39,9 +39,37 @@
         font-weight: 700;
       }
 
+      .header-status {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+
       .player-status {
         color: #d1d5db;
         font-size: 13px;
+      }
+
+      .mqtt-status {
+        color: #d1d5db;
+        font-size: 13px;
+        white-space: nowrap;
+      }
+
+      .mqtt-status[data-state="Connected"] {
+        color: #86efac;
+      }
+
+      .mqtt-status[data-state="Connecting"],
+      .mqtt-status[data-state="Reconnecting"] {
+        color: #fde68a;
+      }
+
+      .mqtt-status[data-state="Disconnected"],
+      .mqtt-status[data-state="Error"],
+      .mqtt-status[data-state="Offline"],
+      .mqtt-status[data-state="Subscribe failed"] {
+        color: #fca5a5;
       }
 
       .video-stage {
@@ -63,6 +91,7 @@
         font-size: 12px;
         text-overflow: ellipsis;
         white-space: nowrap;
+        max-width: 200px;
       }
     </style>
   </head>
@@ -70,7 +99,10 @@
     <main class="player-shell">
       <header class="player-header">
         <h1 class="player-title">Motrex Auto Player Test</h1>
-        <span class="player-status" id="playerStatus">Waiting for schedule</span>
+        <div class="header-status">
+          <span class="mqtt-status" id="mqttStatus" data-state="Disconnected">MQTT: Disconnected</span>
+          <span class="player-status" id="playerStatus">Waiting for schedule</span>
+        </div>
       </header>
 
       <section class="video-stage">
@@ -88,6 +120,7 @@
       const playerStatus = document.getElementById('playerStatus');
       const playReason = document.getElementById('playReason');
       const videoUrl = document.getElementById('videoUrl');
+      const mqttStatus = document.getElementById('mqttStatus');
 
       window.motrexPlayer.onPlayVideo((payload) => {
         videoPlayer.src = payload.videoUrl;
@@ -106,6 +139,16 @@
 
       window.motrexPlayer.onVideoStatus((status) => {
         playerStatus.textContent = status;
+      });
+
+      window.motrexPlayer.onMqttStatus((status) => {
+        const lastMessageText = status.lastMessageAt
+          ? `, last ${new Date(status.lastMessageAt).toLocaleTimeString()}`
+          : '';
+
+        mqttStatus.dataset.state = status.state;
+        mqttStatus.title = status.detail || '';
+        mqttStatus.textContent = `MQTT: ${status.state}${lastMessageText}`;
       });
     </script>
   </body>

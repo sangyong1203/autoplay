@@ -6,5 +6,8 @@ contextBridge.exposeInMainWorld('motrexPlayer', {
   },
   onVideoStatus: (callback) => {
     ipcRenderer.on('video:status', (_event, status) => callback(status));
+  },
+  onMqttStatus: (callback) => {
+    ipcRenderer.on('mqtt:status', (_event, status) => callback(status));
   }
 });
